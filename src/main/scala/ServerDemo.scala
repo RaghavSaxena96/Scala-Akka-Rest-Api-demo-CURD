@@ -17,6 +17,8 @@ import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
 import redis.RedisClient
 import Repository.{ConcreteRedis, RedisRepoImp}
+
+import scala.reflect.runtime.universe.Try
 //import ServerDemo.{pwd, redisUrl}
 import spray.json.DefaultJsonProtocol
 
@@ -48,34 +50,42 @@ object ServerDemo  extends App with ConcreteRedis with SuppFormat
 
    // Redis DataBase Elastic Search
   def db = RedisClient(host = redisUrl.getHost, port = redisUrl.getPort, password = pwd)
-  var MAmt :Map[String,Int] = Map()
-  var MName : Map[String,String] = Map()
+  var MAmt :Map[String,Int] = Map() // To store Amount
+  var MName : Map[String,String] = Map() // To store Names
   // Routes for CURD operation
 
    val route:Route  = pathPrefix("zeta") {
      get {
        path("home") {
-         complete(" Welcome to Zeta App where you can order food !!! ")
+         complete(" Welcome to Zeta App Enjoy your Meal !!! ")
        }
      }~
        get{
          path("getUser") {
            entity(as[userId]) { uid =>
-             println(db.get(uid.id))
-             complete(s"User name is ${MName(uid.id)} and available amount is  is ${MAmt(uid.id)}")
+             var t = MAmt.getOrElse(uid.id,default = -1)
+             var value = db.get(uid.id)
+             if(t>0)
+             {
+               var nameusr: String = MName.getOrElse(uid.id, default = "Not found")
+               var amountusr: Int = MAmt.getOrElse(uid.id, default = 0)
+               complete(s"User name is ${MName(uid.id)} and available his amount  is ${MAmt(uid.id)}")
+             }
+             else
+               complete("User not present with this Id")
            }
          }
        }~
      put {
        path("create-user") {
          entity(as[Zeta]) { usr =>
+
            db.set(usr.id,usr.name)
            Thread.sleep(500)
-           println(db.get(usr.id))
 
            MAmt += (usr.id -> usr.amt)
            MName += (usr.id -> usr.name)
-           complete(s"New User Created! with name ${usr.name}")
+           complete(s"New User Created! with name ${usr.name} and id ${usr.id} ")
          }
        }
      }~
@@ -83,10 +93,18 @@ object ServerDemo  extends App with ConcreteRedis with SuppFormat
        path("del-user")
        {
          entity(as[userId]){ uid =>
-           db.del(uid.id)
-           MAmt.-(uid.id)
-           MName.-(uid.id)
-           complete(s"User deleted with User Id  ${uid.id}")
+           var  result:Future[Long] = db.del(uid.id)
+           var t = MAmt.getOrElse(uid.id,default = -1)
+
+           if(t>0)
+           {
+            MAmt =  MAmt.-(uid.id)
+            MName=  MName.-(uid.id)
+             complete(s"User deleted with User Id  ${uid.id}")
+           }
+             else
+          complete("User not present with this Id")
+
          }
        }
      }~
@@ -94,9 +112,19 @@ object ServerDemo  extends App with ConcreteRedis with SuppFormat
        path("update-usr")
        {
            entity(as[updUser]) { usrdetail =>
-             db.set(usrdetail.id,usrdetail.amt)
-             MAmt += (usrdetail.id -> usrdetail.amt)
-           complete("User Details Updated")
+
+
+               var pre: Future[Boolean] = db.set(usrdetail.id,usrdetail.amt)
+
+               var t = MAmt.getOrElse(usrdetail.id,default = -1)
+
+               if(t>0)
+                 {
+                 MAmt += (usrdetail.id -> usrdetail.amt)
+                 complete("User Details Updated")
+               }
+               else
+                 complete("User Not Present with this Id ! Check Again")
          }
        }
      }
