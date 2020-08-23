@@ -16,6 +16,9 @@ libraryDependencies ++= {Seq(
   "com.github.etaty" %% "rediscala" % "1.8.0",
   "org.scalatest" %% "scalatest" % scalaTestV % "test",
   "org.scalamock" %% "scalamock-scalatest-support" % "3.4.2",
+  "com.typesafe.akka" %% "akka-stream-testkit" % akkaV,
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaV,
+  "com.typesafe.akka" %% "akka-testkit" % akkaV % Test
 
 )
 }
