@@ -10,7 +10,7 @@ To run this you must know basics of Scala like running commands and should have 
 
 Shows the use of Rest Api CURD operations  using Akka to create users and update their information using elastic database Redis.
 
-Create - PUT
-Update - POST
-Read - GET
-Delete - DELETE
+Create - PUT <br>
+Update - POST  <br>
+Read - GET <br>
+Delete - DELETE <br>
